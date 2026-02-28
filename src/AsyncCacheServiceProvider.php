@@ -40,15 +40,19 @@ class AsyncCacheServiceProvider extends ServiceProvider
     {
         $this->mergeConfigFrom(__DIR__ . '/../config/async-cache.php', 'async-cache');
 
-        $this->app->singleton(AsyncCacheManager::class, function ($app) {
-            $config = $app['config']['async-cache'];
+        $this->app->singleton(AsyncCacheManager::class, function (\Illuminate\Contracts\Foundation\Application $app) {
+            /** @var array<string, mixed> $config */
+            $config = $app->make('config')->get('async-cache', []);
 
+            /** @var string $adapterService */
             $adapterService = $config['adapter'] ?? 'cache.store';
+
+            /** @var \Fyennyi\AsyncCache\Storage\AsyncCacheAdapterInterface|\Psr\SimpleCache\CacheInterface|\React\Cache\CacheInterface $cacheAdapter */
             $cacheAdapter = $app->make($adapterService);
 
             return new AsyncCacheManager(
                 AsyncCacheManager::configure($cacheAdapter)
-                    ->withLogger($app['log']) // Laravel Log Manager
+                    ->withLogger($app->make('log'))
                     ->build()
             );
         });
